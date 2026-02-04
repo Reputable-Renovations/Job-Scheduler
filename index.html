@@ -88,13 +88,13 @@
     .operative-jobs{font-size:13px;color:#cbd5e1}
     .month-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;background:#e2e8f0;border:1px solid #e2e8f0;border-radius:16px;overflow:hidden}
     .month-header{background:#1e293b;color:#fff;padding:10px;text-align:center;font-weight:600;font-size:13px}
-    .month-day{background:#fff;min-height:120px;padding:6px;vertical-align:top}
+    .month-day{background:#fff;min-height:140px;padding:6px;vertical-align:top}
     .month-day.weekend{background:#fffbeb}
     .month-day.other-month{background:#f8fafc}
     .month-day.other-month .month-day-num{color:#94a3b8}
     .month-day.today{box-shadow:inset 0 0 0 2px #3b82f6}
     .month-day-num{font-size:13px;font-weight:600;color:#374151;margin-bottom:4px;text-align:right}
-    .month-event{font-size:10px;padding:3px 5px;border-radius:4px;margin-bottom:3px;cursor:pointer;overflow:hidden;color:#fff;line-height:1.3}
+    .month-event{font-size:10px;padding:4px 5px;border-radius:4px;margin-bottom:4px;cursor:pointer;overflow:hidden;color:#fff;line-height:1.25}
     .month-event:hover{opacity:.8}
     .month-more{font-size:10px;color:#3b82f6;cursor:pointer;text-align:center}
     .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;padding:16px;z-index:200}
@@ -408,14 +408,15 @@ function renderMonthView(){
     if(wknd)cls+=' weekend';
     
     var evtsHtml='';
-    for(var j=0;j<Math.min(evts.length,3);j++){
+    for(var j=0;j<Math.min(evts.length,2);j++){
       var e=evts[j];
       var c=JOB_COLORS[e.job.colorIndex%JOB_COLORS.length];
-      var notePreview=e.notes?e.notes.substring(0,20)+(e.notes.length>20?'...':''):'';
-      evtsHtml+='<div class="month-event" style="background:'+c.bg+'" onclick="openEvent('+e.job.id+','+e.day+')" title="'+e.job.name+': '+e.task+'"><strong>'+e.job.name.split('-')[0].trim()+'</strong>'+(notePreview?'<br><span style="font-weight:normal;opacity:0.9">'+notePreview+'</span>':'')+'</div>';
+      var taskPreview=e.task?e.task.substring(0,25)+(e.task.length>25?'...':''):'';
+      var tradesPreview=e.trades?e.trades.substring(0,20)+(e.trades.length>20?'...':''):'';
+      evtsHtml+='<div class="month-event" style="background:'+c.bg+'" onclick="openEvent('+e.job.id+','+e.day+')" title="'+e.job.name+': '+e.task+(e.notes?' - '+e.notes:'')+'"><strong>'+e.job.name.split('-')[0].trim()+'</strong>'+(taskPreview?'<br><span style="font-weight:normal;opacity:0.9">'+taskPreview+'</span>':'')+(tradesPreview?'<br><span style="font-weight:normal;font-size:9px;opacity:0.8">👷 '+tradesPreview+'</span>':'')+'</div>';
     }
-    if(evts.length>3){
-      evtsHtml+='<div class="month-more" onclick="goToDate(\''+d.date.toISOString().split('T')[0]+'\')">+'+(evts.length-3)+' more</div>';
+    if(evts.length>2){
+      evtsHtml+='<div class="month-more" onclick="goToDate(\''+d.date.toISOString().split('T')[0]+'\')">+'+(evts.length-2)+' more</div>';
     }
     
     daysHtml+='<div class="'+cls+'"><div class="month-day-num">'+d.date.getDate()+'</div>'+evtsHtml+'</div>';
