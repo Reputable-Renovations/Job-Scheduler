@@ -138,6 +138,10 @@
     .trade-row input{flex:1;padding:8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px}
     .add-trade-btn{width:100%;padding:10px;background:#eff6ff;color:#3b82f6;border:2px dashed #3b82f6;border-radius:8px;font-weight:600;cursor:pointer;margin-top:8px}
     .add-trade-btn:hover{background:#dbeafe}
+    .trade-selector{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;padding:8px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0}
+    .trade-select-btn{padding:4px 10px;border-radius:16px;font-size:11px;font-weight:600;cursor:pointer;border:2px solid #e2e8f0;background:#fff;color:#374151;transition:all 0.15s}
+    .trade-select-btn:hover{border-color:#3b82f6;background:#eff6ff}
+    .trade-select-btn.selected{border-color:#3b82f6;background:#3b82f6;color:#fff}
     .file-input-wrapper{position:relative;overflow:hidden;display:inline-block}
     .file-input-wrapper input[type=file]{position:absolute;left:0;top:0;opacity:0;cursor:pointer;width:100%;height:100%}
   </style>
@@ -545,14 +549,24 @@ function renderJobModal(){
   var timelineHtml='';
   for(var i=0;i<tempJobData.timeline.length;i++){
     var item=tempJobData.timeline[i];
+    var selectedTrades=(item.trades||'').split(',').map(function(t){return t.trim().toLowerCase()}).filter(function(t){return t});
+    var tradeBtnsHtml='';
+    for(var t=0;t<state.data.trades.length;t++){
+      var trade=state.data.trades[t];
+      if(trade.name){
+        var isSelected=selectedTrades.indexOf(trade.name.toLowerCase())>-1;
+        tradeBtnsHtml+='<button type="button" class="trade-select-btn'+(isSelected?' selected':'')+'" style="'+(isSelected?'background:'+trade.color+';border-color:'+trade.color:'border-color:'+trade.color+';color:'+trade.color)+'" onclick="toggleTrade('+i+',\''+trade.name+'\')">'+trade.name+'</button>';
+      }
+    }
     timelineHtml+='<div class="timeline-day">'+
       '<div class="timeline-day-header">'+
         '<span class="timeline-day-num">Day '+item.day+'</span>'+
         (tempJobData.timeline.length>1?'<button type="button" class="btn-remove-day" onclick="removeTimelineDay('+i+')">🗑 Remove</button>':'')+
       '</div>'+
       '<input type="text" class="form-input" placeholder="Task description..." value="'+(item.task||'')+'" onchange="updateTimelineTask('+i+',this.value)">'+
-      '<input type="text" class="trades-input" placeholder="Trades: e.g., Plumber, Electrician, Dan" value="'+(item.trades||'')+'" onchange="updateTimelineTrades('+i+',this.value)">'+
-      '<div class="trades-hint">Separate multiple trades with commas</div>'+
+      '<div class="trades-hint" style="margin-top:8px;margin-bottom:4px">Click to select trades:</div>'+
+      '<div class="trade-selector">'+tradeBtnsHtml+'</div>'+
+      '<input type="text" class="trades-input" placeholder="Or type custom: e.g., Plumber - John" value="'+(item.trades||'')+'" onchange="updateTimelineTrades('+i+',this.value)" id="trades-input-'+i+'">'+
       '<input type="text" class="form-input" style="margin-top:8px" placeholder="Notes..." value="'+(item.notes||'')+'" onchange="updateTimelineNotes('+i+',this.value)">'+
     '</div>';
   }
@@ -639,8 +653,24 @@ window.selectColor=function(i){if(tempJobData){tempJobData.colorIndex=i;render()
 window.addTimelineDay=function(){if(tempJobData){tempJobData.timeline.push({day:tempJobData.timeline.length+1,task:'',trades:'',notes:''});render()}};
 window.removeTimelineDay=function(i){if(tempJobData&&tempJobData.timeline.length>1){tempJobData.timeline.splice(i,1);for(var j=0;j<tempJobData.timeline.length;j++)tempJobData.timeline[j].day=j+1;render()}};
 window.updateTimelineTask=function(i,v){if(tempJobData)tempJobData.timeline[i].task=v};
-window.updateTimelineTrades=function(i,v){if(tempJobData)tempJobData.timeline[i].trades=v};
+window.updateTimelineTrades=function(i,v){if(tempJobData){tempJobData.timeline[i].trades=v;render()}};
 window.updateTimelineNotes=function(i,v){if(tempJobData)tempJobData.timeline[i].notes=v};
+window.toggleTrade=function(dayIndex,tradeName){
+  if(!tempJobData)return;
+  var current=tempJobData.timeline[dayIndex].trades||'';
+  var trades=current.split(',').map(function(t){return t.trim()}).filter(function(t){return t});
+  var tradeIndex=-1;
+  for(var i=0;i<trades.length;i++){
+    if(trades[i].toLowerCase()===tradeName.toLowerCase()){tradeIndex=i;break;}
+  }
+  if(tradeIndex>-1){
+    trades.splice(tradeIndex,1);
+  }else{
+    trades.push(tradeName);
+  }
+  tempJobData.timeline[dayIndex].trades=trades.join(', ');
+  render();
+};
 
 window.saveJob=function(){
   var n=document.getElementById('job-name').value.trim();
