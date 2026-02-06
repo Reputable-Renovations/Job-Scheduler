@@ -22,25 +22,25 @@ var state={data:{trades:DEFAULT_TRADES,jobs:[]},currentDate:new Date(),view:'wee
 var tempJobData=null;
 
 function migrateJobs(data){
-  if(!data||!data.jobs)return data;
-  var dominated=false;
+  if(!data||!data.jobs)return {data:data,migrated:false};
+  var migrated=false;
   for(var i=0;i<data.jobs.length;i++){
     var job=data.jobs[i];
-    if(job.startDate&&job.timeline&&job.timeline.length>0&&!job.timeline[0].date){
-      dominated=true;
-      var start=new Date(job.startDate);
+    if(job.startDate&&job.timeline&&job.timeline.length>0&&(job.timeline[0].day!==undefined&&!job.timeline[0].date)){
+      migrated=true;
+      var start=new Date(job.startDate+'T00:00:00');
       for(var j=0;j<job.timeline.length;j++){
         var dayNum=job.timeline[j].day||j+1;
-        var d=new Date(start);
+        var d=new Date(start.getTime());
         d.setDate(d.getDate()+dayNum-1);
         job.timeline[j].date=d.toISOString().split('T')[0];
       }
     }
   }
-  return data;
+  return {data:data,migrated:migrated};
 }
 
-function loadFromCloud(){state.syncStatus='syncing';render();db.collection('scheduler').doc('data').get().then(function(doc){if(doc.exists){state.data=migrateJobs(doc.data());}state.syncStatus='synced';state.lastSync=new Date();render();}).catch(function(e){console.error(e);state.syncStatus='error';render();});}
+function loadFromCloud(){state.syncStatus='syncing';render();db.collection('scheduler').doc('data').get().then(function(doc){if(doc.exists){var result=migrateJobs(doc.data());state.data=result.data;if(result.migrated){saveToCloud();}}state.syncStatus='synced';state.lastSync=new Date();render();}).catch(function(e){console.error(e);state.syncStatus='error';render();});}
 function saveToCloud(){state.syncStatus='syncing';render();db.collection('scheduler').doc('data').set(state.data).then(function(){state.syncStatus='synced';state.lastSync=new Date();render();}).catch(function(e){console.error(e);state.syncStatus='error';render();});}
 function formatDate(d){return d.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'})}
 function formatDateShort(d){return d.toLocaleDateString('en-GB',{day:'numeric',month:'short'})}
